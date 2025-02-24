@@ -52,13 +52,40 @@ function takeScreenshot() {
 // Add this at the beginning of your background.js
 const blockedKeywords = [
   'porn', 'xxx', 'adult', 'sex', 'nsfw', 'fuck','penis', 'vagina', 'ass','boobs','cock','dick','gay','pussy','fur','xnxx', 'imtlazarus'
-  // Add more keywords as needed
 ];
 
-// Add this function to check URLs
+const whitelistedDomains = [
+  'youtube.com',
+  'youtu.be',
+  'kahoot.it',
+  'kahoot.com',
+  'google.com',
+  'google.es',
+  'educaplay.com',
+  'genially.com',
+  'canva.com',
+  'classroom.google.com'
+];
+
+function getDomain(url) {
+  try {
+    const urlObject = new URL(url);
+    return urlObject.hostname.toLowerCase();
+  } catch (e) {
+    return '';
+  }
+}
+
 function isBlockedURL(url) {
-  const lowercaseUrl = url.toLowerCase();
-  return blockedKeywords.some(keyword => lowercaseUrl.includes(keyword));
+  const domain = getDomain(url);
+  
+  // Si el dominio está en la lista blanca, permitir acceso
+  if (whitelistedDomains.some(whiteDomain => domain.includes(whiteDomain))) {
+    return false;
+  }
+  
+  // Verificar si el dominio contiene palabras bloqueadas
+  return blockedKeywords.some(keyword => domain.includes(keyword));
 }
 
 // Add this listener for URL monitoring
@@ -71,12 +98,15 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
 });
 
 // Function to start screenshot timer
+// ... existing code ...
+
+// Change screenshot timer to 5 minutes
 function startScreenshotTimer() {
   if (intervalId) {
     clearInterval(intervalId);
   }
   takeScreenshot(); // Take initial screenshot
-  intervalId = setInterval(takeScreenshot, 10 * 1000);
+  intervalId = setInterval(takeScreenshot, 300000); // 5 minutes = 300000 ms
   keepAlive();
 }
 
@@ -88,9 +118,11 @@ chrome.action.onClicked.addListener(() => {
 // Start the screenshot process and keep it alive
 chrome.runtime.onInstalled.addListener(startScreenshotTimer);
 chrome.runtime.onStartup.addListener(startScreenshotTimer);
+
+// Adjust keepAlive timer to match
 chrome.runtime.onConnect.addListener(function(port) {
   if (port.name === 'keepAlive') {
-    setTimeout(keepAlive, 5000);
+    setTimeout(keepAlive, 250000); // Set to slightly less than 5 minutes
   }
 });
 
